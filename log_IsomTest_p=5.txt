@@ -1,0 +1,41 @@
+> load"/home/harashita-lab/Oga/CompletedCodes/IsomTest.txt";
+Loading "/home/harashita-lab/Oga/CompletedCodes/IsomTest.txt"
+charcteristic of base field K: 5
+compute time discriminant= 5.660
+compute time Cartier-Manin matrix =0.000
+========================================
+Superspecial DCEC's
+C=V(P,Q), where P,Q in L[X,Y,Z,W], and Q:=W^2 - q
+base field L:  Finite field of size 5^4
+field K : Finite field of size 5^2
+field L0: Finite field of size 5^2
+========================================
+
+=========================================
+Isomrophism Classes and AutMorphism Groups
+=========================================
+No. 1: 
+Def. eq:
+P:=Y^2*Z - (X^3 + 0 *X*Z^2 + 4 *Z^3)
+Q:=W^2 - (0 *X^2 + 1 *X*Y + K.1^9 *X*Z + 0 *Y^2 +0 *Y*Z + 0 *Z^2)
+j-invariant of E=V(P): 0
+UDCEC?: false
+Automorphism Group:C3*S5
+index: Isom subNo. 1 of  P(No.1)
+----------------------------------------
+
+=========================================
+Each Isomrophism Class
+=========================================
+No. 1 : P := Y^2Z - (X^3 + 0 X*Z^2 + 4 Z^3)
+====================================
+Isom subNo. 1
+----------------------------------------
+ q:= 0 *X^2 + 1 *X*Y + K.1^9 *X*Z + 0 *Y^2 +0 *Y*Z + 0 *Z^2
+ q:= 0 *X^2 + 1 *X*Y + K.1^21 *X*Z + 0 *Y^2 +0 *Y*Z + 0 *Z^2
+ q:= 0 *X^2 + 0 *X*Y + 0 *X*Z + 1 *Y^2 +0 *Y*Z + 2 *Z^2
+
+compute time variety=0.010
+compute time Total=17.840
+
+Total time: 17.839 [25.676] seconds, Total memory usage: 280.81MB

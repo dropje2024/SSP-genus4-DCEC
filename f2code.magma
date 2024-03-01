@@ -1,0 +1,54 @@
+//1. compute f2 in main theorem 3.1 over Rational Field,
+//2. count the number of term in f2, 
+//3. check f2 is NOT homogeneous polynomial,
+//4. check f2 is irreducible polynomials
+
+
+K:=Rationals();
+INT:=Integers();
+
+R<x,y,A,B,a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,10,"grevlex");
+S<X,Y,Z,AA,BB,aa0,aa1,aa2,aa3,aa4,aa5>:=PolynomialRing(K,11);
+//compute polynomial f2 given in Main Theorem3.1-------------------- 
+NonsingPolynomial:=function();
+  PP:=Y^2*Z-(X^3+AA*X*Z^2+BB*Z^3);
+  qq:=aa0*X^2 + aa1*X*Y + aa2*X*Z^2 + aa3*Y^2*Z + aa4*Y*Z + aa5*Z^2;
+  //phi := hom<Sprime->Rprime | x,y,1,A,B>;
+  phi := hom<S->R| x,y,1,A,B,a0,a1,a2,a3,a4,a5>;
+  P:=phi(PP);
+  q:=phi(qq);
+  Res := Resultant(P,q,y);
+  nonsing:=[R!0,R!0,R!0];
+  
+ Start_D:=Realtime();
+  Disc := Discriminant(Res,x);
+  FactDisc := Factorization(Disc);
+  nonsing[1]:=4*A^3+27*B^2;
+  nonsing[3]:=FactDisc[1][1];
+  nonsing[2]:=Disc div (nonsing[3] ^ (FactDisc[1][2]));
+ End_D:=Realtime();
+  printf"Compute time Discriminant= %o\n",End_D - Start_D;
+
+  return nonsing;
+end function;
+
+//-------------compute the number of terms in f2-------
+TermCounter:=function(f)
+  mono:=Monomials(f);
+  return #mono;
+end function;
+
+
+F:=NonsingPolynomial();
+f2:=F[2];
+"----------------------f2-------------------------";
+"f2=";
+f2;
+"------------------f2 end-------------------------";
+N:=TermCounter(f2);
+printf"f2 has %o terms \n",N;
+"Is f2 homogeneous?";
+IsHomogeneous(f2);
+I:=ideal<R|f2>;
+"Is f2 irreducible?";
+IsPrime(I);

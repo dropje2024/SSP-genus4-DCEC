@@ -1,0 +1,500 @@
+//***************************************************
+//isomtest.m
+//This code is based on Algorithm5.4
+//For rational prime p, 
+//1. compute isomorphism classes of superspecial DCEC's over field with charasteristic p.
+//2.  For each isomorphism classes, comptute its automorphism group and check whether it's UDCEC.
+//***************************************************
+
+System("date");
+SetNthreads(5);
+p:=11;
+n:=2;
+Kprime:=GF(p);
+K:=GF(p^n);
+INT:=Integers();
+
+CR<a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,6,"grevlex");
+R<X,Y,A,B>:=PolynomialRing(CR,4,"lex");
+CR_T<t>:=PolynomialRing(K);
+PR<X,Y,Z,W>:=PolynomialRing(CR,4,"grevlex");
+CR2<a0,a1,a2,a3,a4,a5,s>:=PolynomialRing(K,7,"grevlex");
+
+ 
+//compute polynomial f2 given in Main Theorem 3.1
+NonsingPolynomial:=function();
+  CRprime<a0,a1,a2,a3,a4,a5>:=PolynomialRing(Kprime,6,"grevlex");
+  Rprime<x,y,A,B>:=PolynomialRing(CRprime,4,"grevlex");
+  Sprime<X,Y,Z,AA,BB>:=PolynomialRing(CRprime,5);
+  PP := Y^2*Z-(X^3+AA*X*Z^2+BB*Z^3);
+  qq := a0*X^2 + a1*X*Y + a2*X*Z^2 + a3*Y^2*Z + a4*Y*Z + a5*Z^2;
+  phi := hom<Sprime->Rprime | x,y,1,A,B>;
+  P := phi(PP);
+  q := phi(qq);
+  Res := Resultant(P,q,y);
+  nonsing:=[Rprime!0,Rprime!0,Rprime!0];
+  
+ Start_D:=Realtime();
+  DiscG := Discriminant(Res,x);
+  FactDiscG := Factorization(DiscG);
+  nonsing[1]:= 4*A^3+27*B^2;
+  nonsing[3]:= FactDiscG[1][1];
+  nonsing[2]:= DiscG div (nonsing[3] ^ (FactDiscG[1][2]));
+ End_D:=Realtime();
+  printf"compute time discriminant= %o\n",End_D - Start_D;
+
+  CR<a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,6,"grevlex");
+  R<X,Y,A,B>:=PolynomialRing(CR,4,"lex");
+  NonSing:=[];
+  for i in [1..3] do 
+    NonSing[i] := R!nonsing[i];
+  end for;
+
+  return NonSing;
+end function;
+
+
+//for charactaristic p,compute coefficients of supersingular curves
+SUPERSINGULAR:=function(p);
+  CR_T<t>:=PolynomialRing(K);
+  SP:=SupersingularPolynomial(p);
+  j_list := RootsInSplittingField(SP);
+  model_list := [WeierstrassModel(EllipticCurveFromjInvariant(K!j[1])) : j in j_list];
+  coef_list := [Coefficients(w) : w in model_list];
+  return coef_list;
+end function;
+
+//for charactaristic p,compute coefficients of supersingular curves by Algorithm5.1
+CartierManinMtrx:=function(c);
+  CR<a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,6,"grevlex");
+  PR<X,Y,Z,W>:=PolynomialRing(CR,4,"grevlex");
+  P := Y^2*Z - (X^3 + c[4]*X*Z^2 + c[5]*Z^3); // Elliptic curve;  
+  q:=a0*X^2 + a1*X*Y + a2*X*Z + a3*Y^2 +a4*Y*Z + a5*Z^2;
+  Q :=  W^2 -q; //double cover of P   
+  F1:=P^(p-1);
+  C:=ZeroMatrix(CR,4,4);
+  E:=[[1,1,1,2],[1,1,2,1],[1,2,1,1],[2,1,1,1]];
+  index:=[0,0,0,0]; //index of x,y,z,w in t
+
+  S_Alltime:=0;
+  for i in [1,2,3,4] do
+     for j in [1,2,3,4] do
+       for k in [1,2,3,4] do
+         index[k]:=p*E[i][k] - E[j][k];
+       end for;//k   
+       if IsDivisibleBy(index[4],2) eq true then
+          Start_S:=Realtime();   
+           S:=Binomial(p-1, INT!(index[4]/2))*W^index[4]*(-q)^(p-1-INT!(index[4]/2));
+           F:=F1*S;
+          End_S:=Realtime();
+          S_Alltime:=  S_Alltime + End_S - Start_S;
+       else 
+          F:=PR!0; //S=0, and  F:=P^(p-1)*S;
+       end if;
+       
+       C[i,j] := MonomialCoefficient(F,X^index[1]*Y^index[2]*Z^index[3]*W^index[4]);
+    end for;//j
+  end for;//i
+  printf"compute time Cartier-Manin matrix =%o\n",S_Alltime;
+  return C;
+end function;
+
+//check (1,1)-entry of Cartier-Manin Matrix is zero (cf. Lemma2.13)
+ZeroJudge:=procedure(c);
+  if   CR!c ne CR!0 then
+    printf"note:Carter-Manin[1,1] = %o\n",c;
+  end if;
+end procedure;
+
+//change the matrix to the sequence
+MtxToSeq:=function(C);
+  rho1:=hom<PR -> CR | 1,1,1,1>;
+  B:=[];
+  n:=INT!1;
+  for i in [1,2,3,4] do
+     for j in [1,2,3,4] do
+      if PR!C[i,j] ne PR!0 then
+        B[n]:=rho1(C[i,j]);
+        n := n+1;
+      end if;
+     end for;
+  end for;
+  return B;
+end function;
+
+//restrict into Affine space by setting one invariant zero
+RestrictAffine:=function(NewBasis,step);
+  CoeffVar:=[a0,a1,a2,a3,a4,a5];
+  AffineBasis:=NewBasis;
+  for j in [1..step] do  
+    if j ne step then
+      AffineBasis:=Append(AffineBasis,CoeffVar[j]);
+    else
+      AffineBasis:=Append(AffineBasis,CoeffVar[j]-1);
+    end if;
+  end for;  
+  I:=ideal< CR2 | AffineBasis >;
+  return I;
+end function;
+
+
+//compute splitting field for given polynoial g
+FldExtOneVar_pre := function(R, g, S)
+//Input: R=L[x], g in L[x], S is the list of a finite subset of L[x]
+//Output: RR=E[x] with E splitting field of g and [RR!f : f in S]
+  x := R.1;
+  E := SplittingField(g);
+  RR<x> := PolynomialRing(E);
+  return RR, [RR!f : f in S];
+end function;
+
+//compute splitting field for given list of polynoial
+FldExtOneVar := function(R, S)
+//Input: R=L[x], S is the list of a finite subset of L[x]
+//Output: Return RR=E[x] with E splitting field of all g in S and [RR!f : f in S]
+  RR := R;
+  x := R.1;
+  SS := S;
+  for g in S do
+      RR<x>, SS := FldExtOneVar_pre(RR,RR!g,SS);
+  end for;
+  return RR, SS;
+end function;
+
+//compute splitting field for ideal I
+FldExt:=function(I);
+  K := BaseRing(I);
+  R := Parent(I.1);
+  d := #MonomialsOfDegree(R,1);
+  G:=[];
+  R_tmp<x_tmp> := PolynomialRing(K);
+  for i in [1..d] do
+    Gen:=Generators(EliminationIdeal(I, {I.i}));
+    if #Gen ge 1 then
+      g := Gen[1];
+      Monos := Monomials(g);
+      g_tmp := R_tmp!0;
+      for m in Monos do
+        g_tmp +:= MonomialCoefficient(g,m)*x_tmp^Degree(m);
+      end for;
+      G cat:= [g_tmp];
+    end if;
+  end for;
+  if #G ge 1 then
+    R_tmp2, S_tmp := FldExtOneVar(R_tmp, G);
+    return BaseRing(R_tmp2);
+  else
+    return K;
+  end if;
+end function;
+
+//compute the variety of idal I over algebraic closed field
+VarietyAbsolute := function(I);
+  L := FldExt(I);
+  //L;
+  J := ChangeRing(I,L);
+  V:=Variety(J);
+  return V,L;
+end function;
+
+
+
+Isom1:=function(c1,c2,v1,v2,L)//give also L: field?
+//Input: c1 and c2 ; sequence of coefficients of supersingular elliptic curve P1,P2 
+//   v1 and v2 ; sequence of coefficients of Q, where Ci=V(Pi,Qi) is superspecial
+//Output: Wheter the curves C=V(P1,Q) and D=V(P2,Q) are isomorphic 
+  P<X,Y,Z,W> := ProjectiveSpace(L,3);
+  f1 := Y^2*Z - X^3 - c1[4]*X*Z^2 - c1[5]*Z^3;
+  g1 := W^2 - (L!v1[1]*X^2 + L!v1[2]*X*Y + L!v1[3]*X*Z + L!v1[4]*Y^2 + L!v1[5]*Y*Z + L!v1[6]*Z^2);
+  C  := Curve(P,[f1,g1]);
+  f2 := Y^2*Z - X^3 - c2[4]*X*Z^2 - c2[5]*Z^3;
+  g2 := W^2 - (L!v2[1]*X^2 + L!v2[2]*X*Y + L!v2[3]*X*Z + L!v2[4]*Y^2 + L!v2[5]*Y*Z + L!v2[6]*Z^2);
+  D  := Curve(P,[f2,g2]);
+  boo,map := IsIsomorphic(C,D);
+  return boo;
+end function;
+
+
+Isom2:=function(c,V,L)
+//Input: c:sequence of coefficients of supersingular elliptic curve P1
+//       V:set of sequence of coefficients of Q, where C=V(P1,Q) is superspecial
+//Output:list of index of isomorphism class 
+  count:=0;
+  flaglist:=[0 : i in [1..#V]];
+  
+  for i in [1..#V] do
+    if flaglist[i] eq 0 then
+      count:=count+1;
+      flaglist[i]:=count;
+      for j in [i+1..#V] do
+        if flaglist[j] eq 0 then
+          answer:=Isom1(c,c,V[i],V[j],L);
+          if answer eq true then
+          flaglist[j]:=count;
+          end if;  
+        end if;  
+      end for;  
+    end if;
+  end for;
+  return flaglist;
+end function;
+
+RepresentaionClass:=function(flaglist)
+  RepList:=[];
+  counter:=1;
+  for i in [1..#flaglist] do
+    if flaglist[i] eq counter then
+      RepList:=Append(RepList, i);
+      counter:=counter+1;
+    end if;
+  end for;
+  return RepList;
+end function;
+
+
+Isom3:=function(H,V,Rep_List,L)
+//Input: H=[c[i] : c is the sequence of coefficients of supersingular elliptic curve P1]   
+//       V:=[v[i] : set of sequence of coefficients of Q, where C=V(P1,Q) is superspecial, where P1 is defined c[i]]
+//       Rep_List:=[list[i] :  list[i] the No. of isom class representation in v[i]] 
+   count:=0;
+  flaglist:=[[0 : i in Rep_List[j]] : j in [1..#H]];
+  for i in [1..#H] do
+    for t in [1..#Rep_List[i]] do
+     if flaglist[i][t] eq 0 then
+       count:=count+1;
+       flaglist[i][t]:=count;
+        for j in [i+1..#H] do
+        for s in [1..#Rep_List[j]] do
+          if flaglist[j][s] eq 0 then
+            T:=Rep_List[i][t];
+            S:=Rep_List[j][s]; 
+            answer:=Isom1(H[i],H[j],V[i][T],V[j][S],L);
+            if answer eq true then
+            flaglist[j][s]:=count;
+            end if;  
+          end if;  
+        end for;
+        end for;  
+      end if;
+    end for;
+  end for;
+
+  return flaglist;
+end function;
+
+
+//compute automorphism group defeined by sequense of coefficients c and v
+AutGrp:=function(c,v,L)
+  P<X,Y,Z,W> := ProjectiveSpace(L,3);
+  f := Y^2*Z - X^3 - c[4]*X*Z^2 - c[5]*Z^3;
+  g := W^2 - (L!v[1]*X^2 + L!v[2]*X*Y + L!v[3]*X*Z + L!v[4]*Y^2 + L!v[5]*Y*Z + L!v[6]*Z^2);
+  C := Curve(P,[f,g]);
+  G := AutomorphismGroup(C);
+  H := PermutationGroup(G);
+ return GroupName(H);
+end function;
+
+
+QuotTest:=function(t1,v,s_sing,L)
+//Input:  s_sing=[t1 : t1 is the coefficients of supsersingular elliptic curve P1],
+// V=[c : c is the coefficients of Q, where C=V(P1,Q) is supserspecial], L: base field
+//Output: [c in V : C=V(P1,Q) given by c is unique elliptic quotient]
+
+  CR3<b11,b12,b13,b14,b21,b22,b23,b24,b31,b32,b33,b34,a,b,c,d,e>:=PolynomialRing(L,17);
+  PR3<X,Y,Z,W>:=PolynomialRing(CR3,4);
+  OKVarieties:=[];
+  index:=[];
+
+  Flag := true;
+  //printf"----------v= No. %o-------------\n",i;//
+  for t2 in s_sing do
+  
+  //-------------left-------------------
+    Basis:=[];
+    P2:= Y^2*Z - (X^3 + t2[4]*X*Z^2+t2[5]*Z^3);
+    rho5:= hom<PR3 -> PR3 | b11*X+b12*Y+b13*Z+b14*W, b21*X+b22*Y+b23*Z+b24*W, b31*X+b32*Y+b33*Z+b34*W,1>;
+    Left:= rho5(P2);
+  //-------------right--------------------
+    P:= Y^2*Z - (X^3 + t1[4]*X*Z^2+t1[5]*Z^3);
+    Q:= W^2 - (v[1]*X^2 + v[2]*X*Y + v[3]*X*Z + v[4]*Y^2 + v[5]*Y*Z + v[6]*Z^2);
+    Right:= P + (a*X+b*Y+c*Z+d*W)*Q;  
+  //-----------coefficeint----------------
+    Poly:=Left - Right;    
+    mono := Monomials(Poly);      
+    for m in mono do 
+      coe:=MonomialCoefficient(Poly,m);
+      Basis:=Append(Basis,coe);
+    end for;
+
+  //--------------ideal and radical-----------------------         
+    Set:=[a,b,c,d];
+    for s in Set do
+      NewBasis:=Append(Basis,e*s-1);
+      Start:=Realtime();  
+      G:=GroebnerBasis(NewBasis);
+      End:=Realtime();  
+      Test:=G eq [1];      
+      if Test eq false then
+         Flag:=false;
+         break;
+      end if;
+    end for;//s    
+    if Flag eq false then
+      break;
+    end if;          
+  end for;//t2
+  
+  if Flag eq true then 
+    return true;
+  else
+     return false;
+  end if;
+end function;
+
+
+//-----------------MAIN--------------------------
+Start:=Realtime();
+"charcteristic of base field K:",p;
+NS:=NonsingPolynomial();
+List_ssingEll:=SUPERSINGULAR(p);
+
+Vtime:=0;
+L0:=K;
+Varieties:=[];
+for i in [1..#List_ssingEll] do 
+  coeff_P := List_ssingEll[i];
+  A1:=coeff_P[4];
+  B1:=coeff_P[5];
+  Varieties[i]:=[];
+  M:=CartierManinMtrx(coeff_P);
+  ZeroJudge(M[1,1]); //->nesessary? 
+  Basis:=MtxToSeq(M);  
+  //-------------- Map from CR to CR2--------------------
+  rho2:=hom<R -> CR | 1,1,A1,B1>;
+  rho3:=hom<CR -> CR2 | a0,a1,a2,a3,a4,a5>; 
+  NS1:=rho2(NS[1]);
+  NS2:=rho2(NS[2]);
+  NS1:=rho3(NS1);
+  NS2:=rho3(NS2); 
+  NewBasis:=[];
+  for i in [1..#Basis] do
+    NewBasis[i] := rho3(Basis[i]);
+  end for;
+  NewBasis:=Append(NewBasis,s*NS1*NS2 -1);  
+
+  AllCounter:=INT!0;
+  VCounter:=INT!0;
+  for step in [1..6] do
+     I:=RestrictAffine(NewBasis,step);
+     StartV:=Realtime();
+     V,L:=VarietyAbsolute(I);
+     EndV:=Realtime();
+     VCounter:= VCounter + #V;
+     if IsEmpty(V) eq false then
+       if #L gt #L0 then
+       L0:=L;
+       end if;
+       for v in V do
+       Varieties[i]:=Append(Varieties[i], v);
+       end for;
+     end if;
+     Vtime := Vtime + EndV-StartV;
+  end for;//step
+end for;
+
+
+L:=GF(#L0^2);//Need to Setting by own
+List:=[];
+Rep:=[];
+for i in [1..#List_ssingEll] do
+  List[i]:=Isom2(List_ssingEll[i],Varieties[i],L);
+  Rep[i] :=RepresentaionClass(List[i]);
+end for;
+
+RepIsom:=Isom3(List_ssingEll,Varieties,Rep,L);
+
+//----------------------isomorphism classes as whole---------------
+VIsom:=[];
+QTest:=[];
+AutG:=[];
+VIsomIndex:=[];
+count:=1;
+
+for i in [1..#List_ssingEll] do
+  for j in [1..#Rep[i]] do
+    if RepIsom[i][j] eq count then
+      T:=Rep[i][j];
+       QTest[count]:=QuotTest(List_ssingEll[i],Varieties[i][T],List_ssingEll,L);
+       AutG[count]:=AutGrp(List_ssingEll[i],Varieties[i][T],L);
+       VIsom[count]:=<List_ssingEll[i],Varieties[i][T]>;
+       VIsomIndex[count]:=[i,List[i][Rep[i][j]]];
+       count:=count+1;
+    end if; 
+  end for;
+end for;       
+
+"========================================";//10
+"Superspecial DCEC's";
+"C=V(P,Q), where P,Q in L[X,Y,Z,W], and Q:=W^2 - q";
+"base field L: ",L;
+"field K :",K;
+"field L0:",L0;
+ "========================================";
+ " ";
+
+
+"=========================================";
+"Isomrophism Classes and AutMorphism Groups";
+"=========================================";
+for i in [1..count-1] do
+  printf"No. %o: \n",i;
+  "Def. eq:";
+  c0:=VIsom[i][1];
+  v0:=VIsom[i][2];
+  E:=EllipticCurve([c0[4],c0[5]]);
+  //E;
+  if c0[5] eq 0 then
+   j:=1728;
+  else
+   j:=INT!jInvariant(E);
+  end if;
+  printf"P:=Y^2*Z - (X^3 + %o *X*Z^2 + %o *Z^3)\n",c0[4],c0[5];  
+  printf"Q:=W^2 - (%o *X^2 + %o *X*Y + %o *X*Z + %o *Y^2 +%o *Y*Z + %o *Z^2)\n",v0[1],v0[2], v0[3],v0[4],v0[5],v0[6];
+  printf"j-invariant of E=V(P): %o\n",j;
+  printf"UDCEC?: %o\n",QTest[i];
+  printf"Automorphism Group:%o\n",AutG[i];
+  //printf"index: %o of given P(No.%o)\n",VIsomIndex[i][2],VIsomIndex[i][1];
+  printf"index: Isom subNo. %o of  P(No.%o)\n",VIsomIndex[i][2],VIsomIndex[i][1];
+  //printf"index: Isom subNo. %o of  P[No.%o]\n",VIsomIndex[i][2],VIsomIndex[i][1];
+   "----------------------------------------";
+end for;
+" ";
+
+"=========================================";
+"Each Isomrophism Class";
+"=========================================";
+for i in [1..#List_ssingEll] do
+  c:=List_ssingEll[i];
+  printf"No. %o : P := Y^2Z - (X^3 + %o X*Z^2 + %o Z^3)\n",i,c[4],c[5];
+  //printf" P[%o]:= Y^2*Z - (X^3 + %o *X*Z^2 + %o *Z^3),and\n",i,c[4],c[5];//ssp_UDCEC
+  "====================================";
+  max,r:=Max(List[i]);
+  for l in [1..max] do
+  printf"Isom subNo. %o\n",l;
+  "----------------------------------------";
+    for j in [1..#List[i]] do
+        v0:= Varieties[i][j];
+       if List[i][j] eq l then
+         //printf"No. %o: Q=W^2 - (%o *X^2 + %o *X*Y + %o *X*Z + %o *Y^2 +%o *Y*Z + %o *Z^2)\n",j,v0[1],v0[2], v0[3],v0[4],v0[5],v0[6];
+         //printf" q[%o]:= %o*X^2 + %o*X*Y + %o*X*Z^2 + %o*Y^2*Z + %o*Y*Z + %o*Z^2;\n",j,v[1],v[2],v[3],v[4],v[5],v[6];//ssp_UDCEC
+         printf" q:= %o *X^2 + %o *X*Y + %o *X*Z + %o *Y^2 +%o *Y*Z + %o *Z^2\n",v0[1],v0[2], v0[3],v0[4],v0[5],v0[6];
+       end if;
+    end for;
+  end for;
+  " ";
+end for;
+
+End:=Realtime();
+printf"compute time variety=%o\n",Vtime;
+//printf"compute time Total=%o\n",End-Start;
+printf"compute time Total=%o\n",Cputime();

@@ -1,0 +1,29 @@
+> load"/home/harashita-lab/ogasawara/CompletedCodes/s-spUDCEC.txt";
+Loading "/home/harashita-lab/ogasawara/CompletedCodes/s-spUDCEC.txt"
+charcteristic of base field K: 7
+Compute time Discriminant= 6.580
+compute time Cartier-Manin matrix =0.000
+========================================
+Superspecial DCEC's
+C=V(P,Q), where P,Q in L0[X,Y,Z,W], and Q:=W^2 - q
+base field L0:  Finite field of size 7^2
+field K: Finite field of size 7^2
+========================================
+ P[1]:= Y^2*Z - (X^3 + 1 *X*Z^2 + 0 *Z^3),and
+--------
+--------
+number of superspecial DCEC for P[ 1 ]: 0
+Especially, below No. of q defines UDCEC among them:
+[]
+number of superspecial UDCEC for P[ 1 ]:  0
+----------------------------------------
+
+========================================
+The total number of superspecial DCEC :  0
+The total number of superspecial UDCEC:  0
+
+compute time variety=0.010
+compute time QuotientTest=0.000
+compute time Total=6.590
+
+Total time: 6.599 seconds, Total memory usage: 32.09MB

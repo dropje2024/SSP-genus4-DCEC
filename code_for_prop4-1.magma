@@ -1,0 +1,60 @@
+//***************************************************
+//For polynomial f2 given in main theorem1, 
+//check that all the denominators of the coefficients of f2 are products of 2 and 3 
+//***************************************************
+
+
+SetNthreads(5);
+//K:=GF(3);
+K := Rationals();
+R<x,y,A,B,a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,10,"grevlex");
+S<X,Y,Z,AA,BB,aa0,aa1,aa2,aa3,aa4,aa5>:=PolynomialRing(K,11);
+
+//----------------------------(P,q,detJ)-------------------------------------
+PP:=Y^2*Z-(X^3+AA*X*Z^2+BB*Z^3);
+qq:=aa0*X^2 + aa1*X*Y + aa2*X*Z^2 + aa3*Y^2*Z + aa4*Y*Z + aa5*Z^2;
+phi := hom<S->R | x,y,1,A,B,a0,a1,a2,a3,a4,a5>;
+P:=phi(PP);
+q:=phi(qq);
+J:=ZeroMatrix(R,2,2);
+J[1,1]:=Derivative(P,x);
+J[1,2]:=Derivative(P,y);
+J[2,1]:=Derivative(q,x);
+J[2,2]:=Derivative(q,y);
+
+//----------------------------f2-------------------------------------
+Res := Resultant(P,q,y);
+nonsing:=[R!0,R!0,R!0];  
+Disc := Discriminant(Res,x);
+FactDisc := Factorization(Disc);
+f2:=Disc div ((FactDisc[1][1]) ^ (FactDisc[1][2]));
+
+SetVerbose("Faugere", 1);
+SetVerbose("FGLM", 1);
+SetVerbose("GroebnerWalk", 1);
+
+//-----------------------------IBC------------------------------------
+IB := IdealWithFixedBasis([P,q,Determinant(J)]);
+IBC := Coordinates(IB, f2);
+
+"denominator check START\n";
+Flag:=true;
+for i in [1..#IBC] do
+  C := Coefficients(IBC[i]);
+  M := Monomials(IBC[i]);
+  for j in [1..#C] do
+    f := Factorization(Denominator(C[j]));
+    for k in [1..#f] do
+      if f[k][1] ne 2 and f[k][1] ne 3 then
+        "The denominator has the factor neither 2 nor 3:";
+        printf " i %o  j %o  mon %o  coff %o\n", i, j, M[j], C[j];
+        Flag:=false;
+      end if;
+    end for;
+  end for;
+end for;
+if Flag eq true then
+  "All the denominators of the coefficients of f2 are products of 2 and 3!";
+else
+  "There exist the denominator of the coefficients of f2 such that it is products of 2 and 3";
+end if;
