@@ -73,7 +73,7 @@ CartierManinMtrx:=function(c);
   Q :=  W^2 -q; //double cover of P   
   F1:=P^(p-1);
   C:=ZeroMatrix(CR,4,4);
-  E:=[[1,1,1,2],[1,1,2,1],[1,2,1,1],[2,1,1,1]];
+  E := [[2,1,1,1], [1,2,1,1], [1,1,2,1], [1,1,1,2]];
   index:=[0,0,0,0]; //index of x,y,z,w in t
 
   S_Alltime:=0;
