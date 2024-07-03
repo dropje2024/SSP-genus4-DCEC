@@ -65,7 +65,7 @@ SUPERSINGULAR:=function(p);
 end function;
 
 //for charactaristic p,compute coefficients of supersingular curves by Algorithm5.1
-CartierManinMtrx:=function(c);
+HasseWittMtrx:=function(c);
   CR<a0,a1,a2,a3,a4,a5>:=PolynomialRing(K,6,"grevlex");
   PR<X,Y,Z,W>:=PolynomialRing(CR,4,"grevlex");
   P := Y^2*Z - (X^3 + c[4]*X*Z^2 + c[5]*Z^3); // Elliptic curve;  
@@ -95,14 +95,14 @@ CartierManinMtrx:=function(c);
        C[i,j] := MonomialCoefficient(F,X^index[1]*Y^index[2]*Z^index[3]*W^index[4]);
     end for;//j
   end for;//i
-  printf"compute time Cartier-Manin matrix =%o\n",S_Alltime;
+  printf"compute time Hasse-Witt matrix =%o\n",S_Alltime;
   return C;
 end function;
 
-//check (1,1)-entry of Cartier-Manin Matrix is zero (cf. Lemma2.13)
+//check (1,1)-entry of Hasse-Witt Matrix is zero (cf. Lemma2.13)
 ZeroJudge:=procedure(c);
   if   CR!c ne CR!0 then
-    printf"note:Carter-Manin[1,1] = %o\n",c;
+    printf"note:Hasse-Witt[1,1] = %o\n",c;
   end if;
 end procedure;
 
@@ -366,8 +366,8 @@ for i in [1..#List_ssingEll] do
   A1:=coeff_P[4];
   B1:=coeff_P[5];
   Varieties[i]:=[];
-  M:=CartierManinMtrx(coeff_P);
-  ZeroJudge(M[1,1]); //->nesessary? 
+  M:=HasseWittMtrx(coeff_P);
+  //ZeroJudge(M[1,1]); //->nesessary? 
   Basis:=MtxToSeq(M);  
   //-------------- Map from CR to CR2--------------------
   rho2:=hom<R -> CR | 1,1,A1,B1>;
